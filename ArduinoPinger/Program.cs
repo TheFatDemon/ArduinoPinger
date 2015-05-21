@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.Net;
 using System.Net.NetworkInformation;
 using System.IO.Ports;
 using System.Management;
+using System.ComponentModel;
 
 namespace ArduinoPinger
 {
@@ -14,24 +11,54 @@ namespace ArduinoPinger
     {
         static void Main(string[] args)
         {
-            Ping pingSender = new Ping();
-            PingOptions options = new PingOptions();
-
-            options.DontFragment = true;
-
-            string data = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-            byte[] buffer = Encoding.ASCII.GetBytes(data);
-            int timeout = 240;
-            PingReply reply = pingSender.Send(args[0], timeout, buffer, options);
-            if(reply.Status == IPStatus.Success)
+            while (true)
             {
-                Arduino a = new Arduino();
+                Ping pingSender = new Ping();
+                PingOptions options = new PingOptions();
+
+                options.DontFragment = true;
+
+                // 32 Bytes of Data
+                string data = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+                byte[] buffer = Encoding.ASCII.GetBytes(data);
+                int timeout = 240;
+
+                string server = "server1.threesteplabs.com";
+
+                PingReply reply = pingSender.Send(server, timeout, buffer, options);
+                if (reply.Status == IPStatus.Success)
+                {
+                    Arduino a = new Arduino();
+                    if (a.Port == null && !a.UpdateArduinoPort())
+                    {
+                        // TODO Present Error to User
+                        continue;
+                    }
+                    
+                }
             }
         }
     }
     class Arduino
     {
-        public string GetArduinoPort()
+        public Arduino()
+        {
+            UpdateArduinoPort();
+            this.components = new Container();
+            this.serialPort = new SerialPort(this.components);
+            this.serialPort.PortName = Port;
+        }
+
+        public string Port
+        {
+            get;
+            private set;
+        }
+
+        private SerialPort serialPort;
+        private IContainer components = null;
+
+        public Boolean UpdateArduinoPort()
         {
             ManagementScope connectionScope = new ManagementScope();
             SelectQuery serialQuery = new SelectQuery("SELECT * FROM Win32_SerialPort");
@@ -46,7 +73,8 @@ namespace ArduinoPinger
 
                     if (desc.Contains("Arduino"))
                     {
-                        return deviceId;
+                        Port = deviceId;
+                        return true;
                     }
                 }
             }
@@ -55,8 +83,23 @@ namespace ArduinoPinger
                 /* Do Nothing */
             }
 
-            return null;
+            Port = null;
+            return false;
         }
 
+        public bool openConnection()
+        {
+            if (!serialPort.IsOpen)
+            {
+                serialPort.Open();
+                return true;
+            }
+            return false;
+        }
+
+        public void closeConnection()
+        {
+            serialPort.Close();
+        }
     }
 }
