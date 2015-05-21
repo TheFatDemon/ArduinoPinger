@@ -20,7 +20,7 @@ namespace ArduinoPinger
                 options.DontFragment = true;
 
                 // 32 Bytes of Data
-                string data = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+                string data = "randomdatatobeusedforpinglalalal";
                 byte[] buffer = Encoding.ASCII.GetBytes(data);
                 int timeout = 240;
 
@@ -32,12 +32,12 @@ namespace ArduinoPinger
                     Arduino a = new Arduino();
                     if (a.Port == null)
                     {
-                        error("Unable to Connect to Arduino");
+                        error("Unable to Connect to Arduino", "Ping: Success  Arduino: Error 1");
                         break;
                     }
                     if (!a.openConnection())
                     {
-                        error("Connection Error");
+                        error("Connection Error", "Ping: Success  Arduino: Error 2");
                     }else
                     {
                         a.writePing(unchecked((int)reply.RoundtripTime));
@@ -47,12 +47,12 @@ namespace ArduinoPinger
                     Arduino a = new Arduino();
                     if (a.Port == null)
                     {
-                        error("Unable to Connect to Arduino");
+                        error("Unable to Connect to Arduino", "Ping: Error  Arduino: Error 1");
                         break;
                     }
                     if (!a.openConnection())
                     {
-                        error("Connection Error");
+                        error("Connection Error", "Ping: Error  Arduino: Error 2");
                     }
                     else
                     {
@@ -62,10 +62,8 @@ namespace ArduinoPinger
             }
         }
 
-        private static void error(string v)
+        private static void error(string message, string caption)
         {
-            string message = v;
-            string caption = "Error";
             MessageBoxButtons buttons = MessageBoxButtons.OK;
             MessageBox.Show(message, caption, buttons);
         }
