@@ -4,6 +4,7 @@ using System.Net.NetworkInformation;
 using System.IO.Ports;
 using System.Management;
 using System.ComponentModel;
+using System.Windows.Forms;
 
 namespace ArduinoPinger
 {
@@ -29,24 +30,52 @@ namespace ArduinoPinger
                 if (reply.Status == IPStatus.Success)
                 {
                     Arduino a = new Arduino();
-                    if (a.Port == null && !a.UpdateArduinoPort())
+                    if (a.Port == null)
                     {
-                        // TODO Present Error to User
-                        continue;
+                        error("Unable to Connect to Arduino");
+                        break;
                     }
-                    
+                    if (!a.openConnection())
+                    {
+                        error("Connection Error");
+                    }else
+                    {
+                        a.writePing(unchecked((int)reply.RoundtripTime));
+                    }
+                }
+                else{
+                    Arduino a = new Arduino();
+                    if (a.Port == null)
+                    {
+                        error("Unable to Connect to Arduino");
+                        break;
+                    }
+                    if (!a.openConnection())
+                    {
+                        error("Connection Error");
+                    }
+                    else
+                    {
+                        a.displayError();
+                    }
                 }
             }
+        }
+
+        private static void error(string v)
+        {
+            string message = v;
+            string caption = "Error";
+            MessageBoxButtons buttons = MessageBoxButtons.OK;
+            MessageBox.Show(message, caption, buttons);
         }
     }
     class Arduino
     {
         public Arduino()
         {
-            UpdateArduinoPort();
             this.components = new Container();
             this.serialPort = new SerialPort(this.components);
-            this.serialPort.PortName = Port;
         }
 
         public string Port
@@ -78,10 +107,7 @@ namespace ArduinoPinger
                     }
                 }
             }
-            catch (ManagementException e)
-            {
-                /* Do Nothing */
-            }
+            catch (ManagementException) { /* Ignored */ }
 
             Port = null;
             return false;
@@ -100,6 +126,23 @@ namespace ArduinoPinger
         public void closeConnection()
         {
             serialPort.Close();
+        }
+
+        public void writePing(int ping)
+        {
+            string temp = ping.ToString();
+            serialPort.Write(temp);
+        }
+
+        internal void displayError()
+        {
+            serialPort.Write("error");
+        }
+
+        ~Arduino()
+        {
+            closeConnection();
+            Port = null;
         }
     }
 }
